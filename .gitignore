@@ -1,0 +1,17 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Vector store (per-session, should not be committed)
+faiss_index/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store

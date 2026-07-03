@@ -1,0 +1,30 @@
+# ── Core LangChain ─────────────────────────────────────────────────────────
+langchain==0.3.7
+langchain-core==0.3.17
+langchain-community==0.3.7
+langchain-text-splitters==0.3.2
+
+# ── LLM Provider ──────────────────────────────────────────────────────────
+langchain-groq==0.2.1          # FREE — get key at console.groq.com
+
+# ── Embeddings (local, free, ONNX — no torch, no API key) ──────────────────
+fastembed==0.8.0
+
+# ── Tokenizer (lightweight, NO torch) ───────────────────────────────────────
+# ChatGroq doesn't implement its own get_token_ids(), so LangChain's
+# map_reduce summarize chain falls back to HF's GPT2 tokenizer to count
+# tokens when deciding how to combine chunk summaries. This installs just
+# the tokenizer/config utilities — torch is NOT pulled in as a dependency.
+transformers==4.46.3
+
+# ── Vector Store ─────────────────────────────────────────────────────────────
+faiss-cpu==1.10.0
+
+# ── PDF Loading ──────────────────────────────────────────────────────────────
+pypdf==5.1.0
+
+# ── UI ───────────────────────────────────────────────────────────────────────
+streamlit==1.40.0
+
+# ── Utilities ────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1           # load .env file
