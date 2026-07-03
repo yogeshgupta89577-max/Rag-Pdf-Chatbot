@@ -160,7 +160,7 @@ Modify `QA_PROMPT_TEMPLATE` to add / remove sections.
 
 **Switch LLM model** → edit `config.py`
 ```python
-GROQ_MODEL = "openai/gpt-oss-120b"   # change to any active Groq model
+GROQ_MODEL = "llama-3.1-8b-instant"   # change to any active Groq model
 ```
 
 **Enable disk persistence for the vector index** (single-user deployments only) → set in `.env`:
