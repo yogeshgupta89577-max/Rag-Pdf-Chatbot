@@ -10,7 +10,7 @@ load_dotenv()
 
 # ── LLM Provider: Groq ──────────────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL   = "llama-3.1-8b-instant"   # Fixed model, hardcoded (llama-3.1-8b-instant was deprecated)
+GROQ_MODEL   = "llama-3.1-8b-instant"   # Free via Groq (console.groq.com)
 
 # ── Embeddings (Local, free, ONNX-based via FastEmbed) ──────────────────────
 # No API key needed. Downloads a small (~50-100MB) ONNX model on first run,
@@ -32,3 +32,13 @@ VECTOR_STORE_PATH = "./faiss_index"
 # overwrite each other's index. Keep this False unless you specifically
 # need the index to survive a restart for a single-user deployment.
 PERSIST_VECTOR_STORE = os.getenv("PERSIST_VECTOR_STORE", "false").lower() == "true"
+
+# ── Resource limits (important on free-tier hosting) ────────────────────────
+# Embedding all chunks of a large PDF in a single batch can spike memory/CPU
+# enough to get the process killed on free tiers (Render, Streamlit Cloud).
+# Processing in smaller batches keeps peak memory much lower.
+EMBED_BATCH_SIZE = 25
+
+# Soft cap on page count — very large PDFs are still risky even with batching.
+# Raise this only if your hosting plan has more RAM/CPU to spare.
+MAX_PDF_PAGES = 150

@@ -10,7 +10,7 @@ Flow:
 """
 
 import os
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import FastEmbedEmbeddings
@@ -22,6 +22,8 @@ from config import (
     TOP_K_RESULTS,
     VECTOR_STORE_PATH,
     PERSIST_VECTOR_STORE,
+    EMBED_BATCH_SIZE,
+    MAX_PDF_PAGES,
 )
 
 
@@ -50,9 +52,24 @@ def get_embeddings() -> FastEmbedEmbeddings:
 def load_and_split_pdf(pdf_path: str):
     """Load a PDF and split it into overlapping text chunks."""
     print(f"📄 Loading PDF: {os.path.basename(pdf_path)}")
-    loader = PyPDFLoader(pdf_path)
+    loader = PyMuPDFLoader(pdf_path)
     documents = loader.load()
     print(f"   └─ {len(documents)} pages loaded.")
+
+    if not documents or not any(doc.page_content.strip() for doc in documents):
+        raise ValueError(
+            "No extractable text found in this PDF. It may be a scanned "
+            "image-only PDF — OCR would be needed, which this app doesn't support yet."
+        )
+
+    if len(documents) > MAX_PDF_PAGES:
+        raise ValueError(
+            f"This PDF has {len(documents)} pages, which exceeds the "
+            f"{MAX_PDF_PAGES}-page limit for this deployment. Large PDFs can "
+            f"exhaust the free hosting tier's memory mid-processing. Please "
+            f"split the PDF into smaller parts, or raise MAX_PDF_PAGES in "
+            f"config.py if you're running on a plan with more RAM."
+        )
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
@@ -70,12 +87,33 @@ def load_and_split_pdf(pdf_path: str):
 # Vector Store — Create / Save / Load
 # ─────────────────────────────────────────────────────────────────────────────
 def create_vector_store(pdf_path: str) -> FAISS:
-    """Full ingestion pipeline: PDF → chunks → embeddings → FAISS index (in-memory)."""
+    """
+    Full ingestion pipeline: PDF → chunks → embeddings → FAISS index (in-memory).
+
+    Chunks are embedded in small batches rather than all at once. Embedding
+    everything in a single call spikes memory/CPU enough to get the process
+    killed on free-tier hosting (Render, Streamlit Cloud) once a PDF has more
+    than ~30-50 chunks. Batching keeps peak memory roughly constant regardless
+    of document size.
+    """
     chunks     = load_and_split_pdf(pdf_path)
     embeddings = get_embeddings()
 
-    print("⚡ Building FAISS vector store…")
-    vectorstore = FAISS.from_documents(chunks, embeddings)
+    total_batches = (len(chunks) + EMBED_BATCH_SIZE - 1) // EMBED_BATCH_SIZE
+    print(f"⚡ Building FAISS vector store in {total_batches} batch(es) "
+          f"of up to {EMBED_BATCH_SIZE} chunks each…")
+
+    vectorstore = None
+    for i in range(0, len(chunks), EMBED_BATCH_SIZE):
+        batch = chunks[i:i + EMBED_BATCH_SIZE]
+        batch_num = i // EMBED_BATCH_SIZE + 1
+        print(f"   └─ Embedding batch {batch_num}/{total_batches} "
+              f"({len(batch)} chunks)…")
+
+        if vectorstore is None:
+            vectorstore = FAISS.from_documents(batch, embeddings)
+        else:
+            vectorstore.add_documents(batch)
 
     if PERSIST_VECTOR_STORE:
         vectorstore.save_local(VECTOR_STORE_PATH)
