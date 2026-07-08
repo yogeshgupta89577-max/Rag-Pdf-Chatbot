@@ -8,7 +8,7 @@ Upload any PDF → Get an auto-generated structured summary → Chat with it usi
 ### 🔗 Live Demo
 **[Try it here → rag-pdf-chatbot-lncqxb4gkdarnvo93egjdy.streamlit.app](https://rag-pdf-chatbot-lncqxb4gkdarnvo93egjdy.streamlit.app/)**
 
-![PDF Intelligence Chatbot Screenshot](assets/app-screenshot.png)
+![PDF Intelligence Chatbot Screenshot](assets/app-Screenshot.png)
 
 -----
 
